@@ -11,6 +11,38 @@ class ProductsSpider(scrapy.Spider):
 
     def parse(self, response):
 
+        def data_clean(text):
+            
+            def clean_ingredients(text):
+                x = re.search("ingrédients",text.lower())
+                if x != None:
+                    w = text[x.start():x.end()]
+                    text = text.replace(w,"").strip()
+                while len(text) > 0 and text[0] == ":":
+                    text = text.strip(":").strip()
+                return text
+            
+            # clean text with "ingredient" text
+            if type(text) == str and ("Ingrédients" in text or "ingrédients" in text):
+                text = clean_ingredients(text)
+            
+            # clean asterix in text
+            if type(text) == str and "*" in text:
+                x = re.search("\.\*|\. \*",text)
+                if x != None:
+                    text = text[0:x.start()]
+                text = text.replace("*","").strip(".")
+                
+            # split the text
+            if type(text) == str and "- " in text:
+                ingredients = [l.strip() for l in text.split("-") if l.strip() != ""]
+            elif type(text) == str and ", " in text:
+                ingredients = [l.strip() for l in text.split(",") if l.strip() != ""]
+            else:
+                ingredients = []
+
+            return text, ingredients
+
         # parser the response
         page = BeautifulSoup(response.text,"html.parser")
         
@@ -76,8 +108,7 @@ class ProductsSpider(scrapy.Spider):
                 text = tag.text.replace(raw_title,"").strip()
                 title = raw_title.replace(":","").strip()
                 if title == "Composition":
-                    ingredients = text.strip(".").split("-")
-                    ingredients = [l.strip() for l in ingredients if l.strip() != ""]
+                    text, ingredients = data_clean(text)
                     result.update({"ingredients_text":text,"ingredients":ingredients})
                 elif "Valeurs énergétiques pour" in title:
                     per = title.replace("Valeurs énergétiques pour","").strip()
