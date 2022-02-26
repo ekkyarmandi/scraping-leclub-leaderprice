@@ -20,6 +20,6 @@ class LeclubSpider(scrapy.Spider):
             }
 
         max_page = response.css("div.c-load-more").attrib['data-max']
-        for i in range(2,int(max_page)):
+        for i in range(2,int(max_page)+1):
             href = response.urljoin("?page=" + str(i))
             yield response.follow(href, callback=self.parse)
